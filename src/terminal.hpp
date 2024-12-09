@@ -1,6 +1,5 @@
 #include <string>
 #include <ostream>
-#include <conio.h>
 #include <stdio.h>
 #include "colors.h"
 #include <iostream>
@@ -16,7 +15,16 @@
 #include "settings.hpp"
 #include "help_file.hpp"
 #include "command_list.h"
-#include "win_dependent/console.hpp"
+
+#ifdef WINDOWS
+    #include "win_dependent/console.hpp"
+    #include "win_dependent/timer.hpp"
+    #include <conio.h>
+#endif
+#ifdef LINUX
+    #include "linux_dependent/console.hpp"
+    #include "linux_dependent/timer.hpp"
+#endif
 
 using namespace std;
 
@@ -60,7 +68,7 @@ private:
     std::string (*command_handler)(std::string);
 
     // pomocná proměná která zajištuje že se nevykreslijí řádky pořád a uživatel tak vydí co píše
-    uint64_t timerid = 0;
+    Timer * timer;
 
     // handler konsole
     Console * console;
@@ -378,9 +386,9 @@ std::string Terminal::composite_line(RecivedLine line){
                 if(settings.time_precision_format){
                     //now_time in millis;
                     if(line.arrive_time > 1000000){
-                        sprintf(array,"[%07d]",line.arrive_time);
+                        sprintf(array,"[%07lld]",(long long int)line.arrive_time);
                     }else{
-                        sprintf(array,"[%010d]",line.arrive_time);
+                        sprintf(array,"[%010lld]",(long long int)line.arrive_time);
                     }
                 }else{
                     //now_time in h:min:s;
@@ -767,7 +775,7 @@ std::string Terminal::extract(std::string text, int * start_pos , char stop_char
 
 // nastaví kurzor do slova podle toho kde zrovna kurzor je
 void Terminal::set_cursor_in_command(){
-    console->set_cursor_X_position(console->get_cursor_X_position() - last_help_printed_len);
+    console->set_cursor_back(last_help_printed_len);
 }
 
 
@@ -777,16 +785,14 @@ Terminal::Terminal(std::string(*command_handler)(std::string),Console * console)
 
     console->platform_print(composite_footer());
 
-    timerid = initTimer(settings.buffer_millis);
+    timer  = new Timer(settings.buffer_millis);
+
     log_start = double(clock()) / CLOCKS_PER_SEC * 1000;
 
 }
 
 
-Terminal::~Terminal(){
-    //CloseHandle(con);
-    //CloseHandle(conIN);
-}
+Terminal::~Terminal(){ }
 
 
 // uloží stash s logy do souboru last_log v interním formátu
@@ -797,10 +803,15 @@ int Terminal::save_logs(bool save_only_if_not_empty){
         return 0;
     }
 
-    std::string path = getenv("APPDATA");
-    path.append("/serial_utility");
-    CreateDirectory(path.c_str(),NULL);
-    path.append("/last_log");
+    #ifdef WINDOWS
+        std::string path = getenv("APPDATA");
+        path.append("/serial_utility");
+        CreateDirectory(path.c_str(),NULL);
+        path.append("/last_log");
+    #endif
+    #ifdef LINUX
+        std::string path = "./last_log";
+    #endif
     std::ofstream save_file(path); 
 
     // existuje soubor ?
@@ -1485,11 +1496,11 @@ std::array<std::string, 2> Terminal::guess_command(std::string cmd){
 }
 
 void Terminal::tick(bool consume_input){
+
     // každých 5000 ticků vypíse nastrádané linky. to je to aby se dalo číst comand co člověk píše
-    if(timer_that_ticks == timerid ){
+    if(timer->ticked()){
         //todo (zamezit aby se vykreslovalo pořád i když není linka) (optimalizace??)
         print_lines(get_waiting_to_print());
-        timer_that_ticks = 0;
     }
 
     if(!consume_input){ return;  } // terminál je nastavený tak aby nekonzumoval žádné znaky
@@ -1506,8 +1517,9 @@ void Terminal::tick(bool consume_input){
         }else{
             input = (char)console->get_character();
         }
-        
+
         switch (input){
+        case 127: // linux backward
         case '\b':
             if(command.size() >= (cursor_position + 1)){
                 command.erase(command.size() - (cursor_position + 1), 1);
@@ -1541,7 +1553,7 @@ void Terminal::tick(bool consume_input){
             command.insert(command.end() - this->cursor_position ,input);
             break;
         }
-
+        
         // vymažeme předešlý příkaz
         deler += '\r'; 
         for (size_t i = 0; i < last_command_printed_len + last_help_printed_len + 5; i++){

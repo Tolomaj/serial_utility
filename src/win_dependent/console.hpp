@@ -20,10 +20,10 @@ public:
     };
 
     // nastaví pozici kurzoru na poslední lince
-    void set_cursor_X_position(int positionX){
+    void set_cursor_back(int positionX){
         CONSOLE_SCREEN_BUFFER_INFO cbsi;
         if (GetConsoleScreenBufferInfo(con, &cbsi)){
-            cbsi.dwCursorPosition.X = positionX;
+            cbsi.dwCursorPosition.X = cbsi.dwCursorPosition.X - positionX;
             SetConsoleCursorPosition( con, cbsi.dwCursorPosition); 
         }
     }

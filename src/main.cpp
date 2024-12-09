@@ -1,20 +1,36 @@
+#undef WINDOWS
+#undef LINUX
+
+#define WINDOWS // WINDOWS | LINUX
+
+#include "stdint.h"
+
+// windows dependencies
+#ifdef WINDOWS
+    #include "win_dependent/timer.hpp"
+    #include "win_dependent/executer.hpp"
+    #include "win_dependent/serial.hpp" 
+    #include <conio.h>
+#endif
+#ifdef LINUX
+    #include "linux_dependent/timer.hpp"
+    #include "linux_dependent/executer.hpp"
+    #include "linux_dependent/serial.hpp"
+#endif
+
 // globální knihvona
-#include "win_dependent/timer.hpp"
 #include "settings.hpp" 
 
+//ostatní knihovny
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <conio.h>
-#include <windows.h>
 #include <sstream>  
 #include <signal.h>
 #include "colors.h"
 #include "terminal.hpp"
 #include "arg_parser.hpp"
-#include "win_dependent/executer.hpp"
-#include "win_dependent/serial.hpp"
 #include "tests.hpp"
 #include "command_list.h"
 
@@ -82,7 +98,7 @@ std::string on_command(std::string command){
         console->clear();
         print_help();
         std::cout << "Press any character to continue";
-        continuing_with_cahracter = (char)getch();
+        continuing_with_cahracter = (char)console->get_character();
         terminal->redraw();
         return "";
     }
@@ -90,18 +106,18 @@ std::string on_command(std::string command){
     if(lower_command == cmd::name(cmd::HALT)){
         // zavřeme port
         std::string revive_port = serial->get_port_name();
-        serial->close();
+        serial->close_port();
 
         // čekáme na interakci od uživatele
         std::cout << std::endl << "Serial line halted." << std::endl;
         std::cout << "Press any character to continue" << std::endl;
-        continuing_with_cahracter = (char)getch();
+        continuing_with_cahracter = (char)console->get_character();
 
         // překreslíme texty
         terminal->redraw();
 
         //znovu otevřeme seriovou linku
-        if(serial->open(revive_port) != 0){
+        if(serial->open_port(revive_port) != 0){
             return "Cant reopen serial line!!";
         };
         return "Serial line reopened sucesfuly!";
@@ -110,10 +126,10 @@ std::string on_command(std::string command){
     if(lower_command == cmd::name(cmd::REOPEN) || lower_command == cmd::name(cmd::REOPEN1)){
         // zavřeme port
         std::string revive_port = serial->get_port_name();
-        serial->close();
+        serial->close_port();
 
         //znovu otevřeme seriovou linku
-        if(serial->open(revive_port) != 0){
+        if(serial->open_port(revive_port) != 0){
             return "Cant reopen serial line!!";
         };
         return "Serial line reopened sucesfuly!";
@@ -189,7 +205,7 @@ std::string on_command(std::string command){
     if(!port_opening_name.empty()){
         //začneme počítat hodiny on nuly
         terminal->reset_clocks();
-        bool opened = serial->open(port_opening_name) == 0;
+        bool opened = serial->open_port(port_opening_name) == 0;
 
         terminal->set_serial_connected_status(opened);
         if(opened){
@@ -206,7 +222,7 @@ std::string on_command(std::string command){
         serial->scan_and_print();
         std::cout << "Press any character to continue";
 
-        continuing_with_cahracter = (char)getch();
+        continuing_with_cahracter = (char)console->get_character();
         
         terminal->redraw();
         return "";
@@ -219,7 +235,7 @@ std::string on_command(std::string command){
     
     // příkaz CLOSE pro uzavření portu
     if(lower_command == cmd::name(cmd::CLOSE) || lower_command == cmd::name(cmd::CLOSE1)){
-        serial->close();
+        serial->close_port();
         terminal->set_serial_connected_status(serial->opened());
         return "Port closed.";
     }
@@ -282,7 +298,7 @@ std::string on_command(std::string command){
         // některé make příkazi chtějí vyplou seriovou linku.
         if(is_serial_command(command_to_run)){
             revive_port = serial->get_port_name();
-            serial->close();
+            serial->close_port();
         }
         
         int return_value = executer->execute(command_to_run,force_to_show_returncode);
@@ -291,7 +307,7 @@ std::string on_command(std::string command){
         if(!(settings.show_sucess_program_return_code && return_value == 0 && force_to_show_returncode == false)){ 
             // čekání na userinput (+ zobrazení návratové hodnoty)
             std::cout << FOREGRY << "Command done with return value [" << FOREWHT << return_value << FOREGRY << "]. Press any character to continue" << RESETTEXT;
-            continuing_with_cahracter = (char)getch();
+            continuing_with_cahracter = (char)console->get_character();
         }
 
         //začneme počítat hodiny on nuly
@@ -299,7 +315,7 @@ std::string on_command(std::string command){
 
         // pokud před příkazem byla zavřená seriová linka znovu jí otevře
         if(revive_port != ""){
-            if(serial->open(revive_port) != 0){
+            if(serial->open_port(revive_port) != 0){
                 return "Cant reopen serial line!!";
             };
         }
@@ -397,6 +413,7 @@ int main(int argc, char** argv){
     load_settings();
     if(signal(SIGINT, signal_callback_handler) == SIG_ERR ) exit(EXIT_FAILURE );
 
+
     serial = new Serial();
     terminal = new Terminal(&on_command,console);
     executer = new ProgramExecuter();
@@ -443,7 +460,7 @@ int main(int argc, char** argv){
     serial->set_speed(settings.serial_speed);
 
     if(!serial->opened()){
-        if(serial->open(settings.port) != 0 ){
+        if(serial->open_port(settings.port) != 0 ){
             terminal->set_command_response( "Cant open serial line!! " + parsing_error);
         }else{
             terminal->set_serial_connected_status(true);
@@ -453,7 +470,7 @@ int main(int argc, char** argv){
 
     // main loop -------------------------------------------------------------------------------------
     while (true){
-        Sleep(2);// nechceme vytěžovat procesor a čekat můžeme
+        uni_sleep(2);
         ProcessTimerMessages(); // handler windows timerů // todo crete as platform depemndent
         // příkaový režim
         switch (executer->get_state()){
@@ -470,7 +487,6 @@ int main(int argc, char** argv){
                 // neprobíhá žádný program (beží terminálová apliakce)
                 if(serial_direct_input){
                     //mód posílání klávesnice přímo na seriovou linku
-
 
                     if(console->has_any_char()){
                         char input = console->get_character();

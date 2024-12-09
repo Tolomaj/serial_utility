@@ -5,6 +5,9 @@
 #include <windows.h>
 #include <iostream>
 
+#ifndef TIMER_WIN_LIB
+#define TIMER_WIN_LIB
+
 // proměnná ohlašující který timer ticknul
 uint64_t timer_that_ticks = 0;
 
@@ -14,10 +17,21 @@ void CALLBACK timer_interupt(HWND hwnd, UINT uMsg, UINT timerId, DWORD dwTime) {
  /// std::cout << "timer tick " << timerId << std::endl;
 }
 
-// inicializuje timer a vrátí jeho id
-uint64_t initTimer(int millis){
-    return (uint64_t)SetTimer(NULL, 0, millis, &timer_interupt);
-}
+
+class Timer {
+    int timer_id;
+public:
+    Timer(int millis){
+        timer_id = (uint64_t)SetTimer(NULL, 0, millis, &timer_interupt);
+    }
+
+    bool ticked(){
+        bool ticked = timer_that_ticks == timer_id;
+        timer_that_ticks = 0;
+        return ticked;
+    }
+};
+
 
 // funkce zajišťující obsluhu timerů
 void ProcessTimerMessages(){
@@ -32,3 +46,10 @@ void ProcessTimerMessages(){
         DispatchMessage(&msg);  // dispatches message to window 
     } 
 }
+
+
+void uni_sleep(int i){
+    Sleep(i);// nechceme vytěžovat procesor a čekat můžeme
+}
+
+#endif

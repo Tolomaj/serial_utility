@@ -2,7 +2,7 @@
 
 #include <string>
 #include <limits.h>
-#include <Windows.h>
+#include <windows.h>
 
 //inspirováno https://stackoverflow.com/questions/6036716/serial-comm-using-writefile-readfile
 
@@ -28,11 +28,10 @@ public:
     inline bool opened();
 
     // close actual open port
-    void close();
+    void close_port();
 
     // open port 
-    int open(int port_id);
-    int open(std::string string_number);
+    int open_port(std::string string_number);
 
     //nastaví rychlost sběrnice
     void set_speed(int speed);
@@ -62,7 +61,7 @@ void Serial::scan_and_print() {
 
     // checking ports from COM0 to COM255
     for(int i=0; i<255; i++) {
-        std::string ComName = "COM" + to_string(i); // converting to COM0, COM1, COM2
+        std::string ComName = "COM" + std::to_string(i); // converting to COM0, COM1, COM2
 
         // Test the return value and error if any
         if(QueryDosDevice(ComName.c_str(), lpTargetPath, 5000) != 0) { //QueryDosDevice returns zero if it didn't find an object
@@ -85,7 +84,7 @@ inline bool Serial::opened(){
 }
 
 
-void Serial::close(){
+void Serial::close_port(){
     if(file == NULL){
         return; // port is already closed
     }
@@ -95,12 +94,12 @@ void Serial::close(){
 }
 
 
-int Serial::open(int port_id){
-    return open(to_string(port_id));
-}
+//int Serial::open(int port_id){
+//    return open(std::to_string(port_id));
+//}
 
 
-int Serial::open(std::string string_number){
+int Serial::open_port(std::string string_number){
     
     // pokud je port "" nebo none neřešíme (nastavení třeba otevírá port na NONE)
     if(string_number == "" || string_number == "NONE"){
@@ -108,7 +107,7 @@ int Serial::open(std::string string_number){
     }
     
     //pokud je otevřený jiný port, zavře ho
-    if(file != NULL){ close(); }
+    if(file != NULL){ close_port(); }
 
     std::string port_name = "";
 
@@ -129,9 +128,9 @@ int Serial::open(std::string string_number){
     // get the current DCB, and adjust a few bits to our liking.
     memset(&port, 0, sizeof(port));
     port.DCBlength = sizeof(port);
-    std::string com_settings_string = "baud=" + to_string(speed) + " parity=n data=8 stop=1";
+    std::string com_settings_string = "baud=" + std::to_string(speed) + " parity=n data=8 stop=1";
     if (!GetCommState(file, &port) || !BuildCommDCB(com_settings_string.c_str(), &port) || !SetCommState(file, &port)){
-        close();
+        close_port();
         return 2;
     }
 
@@ -142,7 +141,7 @@ int Serial::open(std::string string_number){
     timeouts.WriteTotalTimeoutConstant = 1;
 
     if (!SetCommTimeouts(file, &timeouts)){
-        close();
+        close_port();
         return 3;
     }
 
@@ -157,8 +156,8 @@ void Serial::set_speed(int speed){
     if(file != NULL){
         // reopen port
         std::string port_name = get_port_name();
-        close();
-        open(port_name);
+        close_port();
+        open_port(port_name);
     }
 }
 
@@ -202,5 +201,5 @@ bool Serial::write(char ch){
 
 
 Serial::~Serial(){
-    close();
+    close_port();
 }

@@ -49,10 +49,15 @@ std::string bool_to_string(bool value){
 
 
 void save_settings(){
-    std::string path = getenv("APPDATA");
-    path.append("/serial_utility");
-    CreateDirectory(path.c_str(),NULL);
-    path.append("/settings.ini");
+    #ifdef WINDOWS
+        std::string path = getenv("APPDATA");
+        path.append("/serial_utility");
+        CreateDirectory(path.c_str(),NULL);
+        path.append("/settings.ini");
+    #endif
+    #ifdef LINUX
+        std::string path = "./settings.ini";
+    #endif
 
     mINI::INIFile file(path.c_str());
     mINI::INIStructure ini;
@@ -110,8 +115,13 @@ void load_settings(){
     settings.hide_messages[PR_TESTOK] = true;
 
     //načtení defaultní cesty s nastavením
-    std::string path = getenv("APPDATA");
-    path.append("/serial_utility/settings.ini");
+    #ifdef WINDOWS
+        std::string path = getenv("APPDATA");
+        path.append("/serial_utility/settings.ini");
+    #endif
+    #ifdef LINUX
+        std::string path = "./settings.ini";
+    #endif
 
     mINI::INIFile file(path.c_str());
     mINI::INIStructure ini;

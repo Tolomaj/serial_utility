@@ -1,14 +1,13 @@
-/** Toto je soubor spouštěče který spouští programy (PRO_WINDOWS) */
+/** Toto je soubor spouštěče který spouští programy (PRO_LINUX) */
 
 #include <string>
-#include <windows.h>
+#include <cstdlib>
 
 enum ExecuterState { RUNNING, ENDED, SLEEPING}; // program runing | program just ended | program not runung and executer sleeps
 
 class ProgramExecuter{
 private:
     ExecuterState state = SLEEPING;
-    FILE* pPipe = NULL;
 public:
 
     ProgramExecuter(){ state = SLEEPING; }
@@ -19,7 +18,7 @@ public:
         state = RUNNING;
 
         // spustíme program (předává se jak stdout tak stdin)
-        int return_val = system(command.c_str());
+        int return_val = std::system(command.c_str());
 
         // program skončil (není žádný program který by běžel déle než system() )
         state = ENDED;
