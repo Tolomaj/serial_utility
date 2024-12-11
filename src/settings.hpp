@@ -28,7 +28,7 @@ struct Settings{
     Priority guess_exclamation_priority = PR_WARINING; // nastavuje prioritu přiřazenou řádku bez hlavičky s ! na konci
     std::string port = "NONE";          // port na který se připojujeme
     int buffer_millis = 150;           // pro přehlednost seskupujeme správy a vypisujeme je součastně.Toto je počet millisekund který maximálně čekáme na zobrazení
-    int response_show_ticks = 20;      //kolik ticků terminálu je response vyditený na terminálu.
+    int response_show_ticks = 10;      //kolik ticků terminálu je response vyditený na terminálu.
     std::vector<std::string> serial_commands; // příkazy které chtějí zavřenou seriovou linku.
     bool use_hinting = true;
 
@@ -81,8 +81,6 @@ void save_settings(){
     ini["settings"]["use_hinting"] = bool_to_string(settings.use_hinting);
     ini["settings"]["serial_speed"] = to_string((int)settings.serial_speed);
 
-
-
     //composite show string
     std::string show_prio = "";
     for(int i = 0; i < PRIORYTY_ENUM_END; i++){
@@ -99,9 +97,9 @@ void save_settings(){
         all_commands.append(serial_cmd);
         all_commands += ',';
     }
-    
+
     // remove last , at array
-    if(all_commands.back() == ','){ all_commands.pop_back(); }
+    if(!all_commands.empty() && all_commands.back() == ','){ all_commands.pop_back(); }
 
     ini["settings"]["serial_commands"] = all_commands; 
 
@@ -148,7 +146,7 @@ void load_settings(){
         std::string s = ini["settings"]["serial_commands"];
         std::string tmp; 
         std::stringstream serial_commands_stream(s);
-        settings.serial_commands.empty();
+        settings.serial_commands.clear();
         while(getline(serial_commands_stream, tmp, ',')){
             settings.serial_commands.push_back(tmp);
         }

@@ -1,7 +1,7 @@
 #undef WINDOWS
 #undef LINUX
 
-#define WINDOWS // WINDOWS | LINUX
+#define LINUX // WINDOWS | LINUX
 
 #include "stdint.h"
 
@@ -237,6 +237,7 @@ std::string on_command(std::string command){
     if(lower_command == cmd::name(cmd::CLOSE) || lower_command == cmd::name(cmd::CLOSE1)){
         serial->close_port();
         terminal->set_serial_connected_status(serial->opened());
+        settings.port = "NONE";
         return "Port closed.";
     }
 
@@ -400,6 +401,7 @@ void signal_callback_handler(int signum) {
         signal(SIGINT, signal_callback_handler); // nastavíme hlídání signálu znovu
     }else{
         // uživatel chce ukončit náš program. (uložíme a skončíme)
+        console->clear();
         std::cout << FOREGRY << "Saving settings and exiting. Bye :)" << RESETTEXT << std::endl;
         save_and_exit_appdata();
     }
@@ -418,6 +420,7 @@ int main(int argc, char** argv){
     terminal = new Terminal(&on_command,console);
     executer = new ProgramExecuter();
     ArgParser arg_parser;
+
 
     // PARSE PROGRAM --------------------------------------
     std::string parsing_error = "";
@@ -455,22 +458,25 @@ int main(int argc, char** argv){
 
     }
 
+
     // OPEN SERIAL PORT IF NOT OPENED -------------------------
 
     serial->set_speed(settings.serial_speed);
 
-    if(!serial->opened()){
-        if(serial->open_port(settings.port) != 0 ){
+    if(settings.port != "NONE" && settings.port != ""  ){ // todo neotevírat pokud je none nebo ""
+        if(!serial->opened() && serial->open_port(settings.port) != 0 ){
             terminal->set_command_response( "Cant open serial line!! " + parsing_error);
         }else{
             terminal->set_serial_connected_status(true);
-            terminal->set_command_response( "Serial debug toolbox Started without problem. " + parsing_error);
+            terminal->set_command_response( "Serial debug toolbox Started without problem and opens last port. " + parsing_error);
         };
+    }else{
+        terminal->set_command_response( "Serial debug toolbox Started without problem. ");
     }
 
     // main loop -------------------------------------------------------------------------------------
     while (true){
-        uni_sleep(2);
+        uni_sleep(4);
         ProcessTimerMessages(); // handler windows timerů // todo crete as platform depemndent
         // příkaový režim
         switch (executer->get_state()){
@@ -512,8 +518,7 @@ int main(int argc, char** argv){
 
         // čtení seriové linky
         if(serial->opened()){
-            
-            terminal->print(serial->read());
+            terminal->print(serial->read_s());
         }
     }
 

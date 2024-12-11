@@ -3,23 +3,49 @@
 #include <string>
 #include <limits.h>
 #include <iostream>
-#include <string>
+#include <vector>
 #include <fcntl.h>
 #include <fstream>
 #include <filesystem>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
+#include <errno.h> // Error integer and strerror() function
 
 #define NOTHING_TO_READ INT_MAX
+
+// keydefs pro linux
+#define ARROW_UP    'A'
+#define ARROW_DOWN  'B'
+#define ARROW_LEFT  'D'
+#define ARROW_RIGHT 'C'
 
 
 class Serial {
 private:
     int serial_speed = 9600;
-    int serial_port = 0;
+    int serial_port = -1;
     std::string port_name = "";
     struct termios tty;
+
+
+    std::vector<std::string> get_scan(){
+        std::vector<std::string> list;
+
+        namespace fs = std::filesystem;
+        const std::string DEV_PATH = "/dev/serial/by-id";
+        try{
+            fs::path p(DEV_PATH);
+            if (!fs::exists(DEV_PATH)) return list;
+            for (fs::directory_entry de: fs::directory_iterator(p)){
+                if (fs::is_symlink(de.symlink_status())){
+                    list.push_back("/dev/" + fs::read_symlink(de).filename().string());
+                }
+            }
+        } catch (const fs::filesystem_error &ex) {}
+        return list;
+    }
+
 public:
 
     // print ports to std::cout
@@ -27,27 +53,17 @@ public:
         std::cout << "Active ports:" << std::endl;
         bool gotPort = false;    // in case the port is not found
 
-        namespace fs = std::filesystem;
-        const std::string DEV_PATH = "/dev/serial/by-id";
-        try{
-            fs::path p(DEV_PATH);
-            if (!fs::exists(DEV_PATH)) goto end;
-            for (fs::directory_entry de: fs::directory_iterator(p)){
-                if (fs::is_symlink(de.symlink_status())){
-                    fs::path symlink_points_at = fs::read_symlink(de);
-                    std::cout << symlink_points_at.filename() << std::endl;
-                    gotPort = true;
-                }
-            }
-        } catch (const fs::filesystem_error &ex) {}
-        
-        end:
-        if(!gotPort){ std::cout << "No port!" << std::endl; } // to display error message incase no ports found
+        for(std::string file_name : get_scan()){
+            std::cout << " " << file_name << std::endl;
+            gotPort = true;
+        }
+
+        if(!gotPort){ std::cout << " No port!" << std::endl; } // to display error message incase no ports found
     };
 
     // get if port is opened
     inline bool opened(){
-        return serial_port != 0;
+        return !(serial_port == -1);
     };
 
     // get currently opened port
@@ -60,12 +76,27 @@ public:
 
     // close actual open port
     void close_port(){
+        if(serial_port < 2){
+            serial_port = -1;
+            return;
+        }
         close(serial_port);
+        serial_port = -1;
     };
 
     // open port 
     int open_port(std::string string_number){
         
+        for(std::string path : get_scan()){
+            if(string_number.length() < path.length()){
+                // pokud se shoduje koneczprávy nahrádime ho celou cestou
+                if(path.substr(path.length() - string_number.length()) == string_number){
+                    string_number = path;
+                    break;
+                }
+            }
+        }
+
         serial_port = open(string_number.c_str(), O_RDWR);
 
         if (serial_port < 0) { goto cant_open; }
@@ -80,12 +111,11 @@ public:
 
         port_name = string_number;
 
-        std::cout << "opening: " << string_number << std::endl;
-        return true;
+        return 0;
 
       cant_open:
         this->close_port();
-        return false;
+        return -1;
     };
 
     //nastaví rychlost sběrnice
@@ -105,18 +135,33 @@ public:
 
     //přečte jeden znak z seriové linky
     int read_char(){
-        return 0; // todo
+        int bytes, c;
+        ioctl(serial_port, FIONREAD, &bytes);
+        if(bytes > 0){
+            read(serial_port, (char*)(&c), 1);
+            return c;
+        }
+        return NOTHING_TO_READ;
     };
 
     // přečte vše co došlo na seriovou linku
-    std::string read(){
-        return ""; //todo
+    std::string read_s(){
+        int serial_read = read_char();
+        std::string input = "";
+        while(serial_read != NOTHING_TO_READ){
+            input += (char)serial_read;
+            serial_read = read_char();
+        }
+        return input;
     };
 
     // zapíše znak na seriovou linku
     bool write(char ch){
+        //todo
         return false;
     };
     
-    ~Serial(){};
+    ~Serial(){
+        close_port();
+    };
 };

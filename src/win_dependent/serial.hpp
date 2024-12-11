@@ -8,6 +8,13 @@
 
 #define NOTHING_TO_READ INT_MAX
 
+//keydefs pro windows
+#define ARROW_UP    72
+#define ARROW_DOWN  80
+#define ARROW_LEFT  75
+#define ARROW_RIGHT 77
+
+
 class Serial {
 private:
     HANDLE file = NULL;
@@ -43,7 +50,7 @@ public:
     int read_char();
 
     // přečte vše co došlo na seriovou linku
-    std::string read();
+    std::string read_s();
 
     // zapíše znak na seriovou linku
     bool write(char ch);
@@ -181,7 +188,7 @@ int Serial::read_char(){
 
 
 // přečte vše co došlo na seriovou linku
-std::string Serial::read(){
+std::string Serial::read_s(){
     int serial_read = read_char();
     std::string input = "";
     while(serial_read != NOTHING_TO_READ){

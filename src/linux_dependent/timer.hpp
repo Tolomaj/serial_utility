@@ -15,15 +15,15 @@ class Timer {
     int delay;
 public:
     Timer(int millis){
-        start = clock();
+        start = clock() / (CLOCKS_PER_SEC/1000);
         delay = millis;
     }
 
     bool ticked(){
-        clock_t now = clock();
+        clock_t now = clock() / (CLOCKS_PER_SEC/1000);
         clock_t cmp = start;
         if(now > cmp + delay){
-            start = clock();
+            start = clock()/ (CLOCKS_PER_SEC/1000);
             return true;
         }
         return false;

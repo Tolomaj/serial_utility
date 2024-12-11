@@ -37,7 +37,9 @@ public:
 
     // nastaví kurzor n znaků dozadu
     void set_cursor_back(int n){
-        printf("\033[%dD",n); 
+        if(n > 0){
+            printf("\033[%dD",n); 
+        }
     }
 
     // nastaví pozici kurzoru na poslední lince
@@ -50,7 +52,7 @@ public:
     }
 
     // je nějaký znak k přijetí ?
-    bool has_any_char(){
+    bool has_any_char(){ //todo revizuj
         struct termios oldt, newt;
         
         tcgetattr(STDIN_FILENO, &oldt);

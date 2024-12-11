@@ -319,6 +319,7 @@ std::string Terminal::composite_line(RecivedLine line){
 
 // Příprava linky k vykreslení (příprava dat) -------------------------------------------------------------------------------------------------------
     // poslední 2 znaky zprávy nemůžou být /n /r ' '
+/*
     if(line.message.back() == '\r'){ line.message.pop_back(); }
     if(line.message.back() == '\n'){ line.message.pop_back(); }
     if(line.message.back() == ' ' ){ line.message.pop_back(); }
@@ -331,6 +332,7 @@ std::string Terminal::composite_line(RecivedLine line){
     if(line.message.front() == '\n'){ line.message.substr(1,-1); }
     if(line.message.front() == '\r'){ line.message.substr(1,-1); }
     if(line.message.front() == '\n'){ line.message.substr(1,-1); }
+*/
 
     // pokud není definovaná priorita ale na konci je ! nastavíme jako warning (! může být na posledních 3 pozicích) 
     if(settings.in_text_highliting){
@@ -363,6 +365,7 @@ std::string Terminal::composite_line(RecivedLine line){
             case PR_TESTOK:   line_message_color = FOREGRN; break;
             case PR_TESTNOK:  line_message_color = FORERED; break;
             case PR_SILENT:   line_message_color = FOREGRY; break;
+            case PR_BEGIN:    line_message_color = FORECYN; break;
             case PR_SOFT_BRAKEPOIT: line_message_color = FOREYEL; break;
             default: break;
         }
@@ -775,7 +778,7 @@ std::string Terminal::extract(std::string text, int * start_pos , char stop_char
 
 // nastaví kurzor do slova podle toho kde zrovna kurzor je
 void Terminal::set_cursor_in_command(){
-    console->set_cursor_back(last_help_printed_len);
+    console->set_cursor_back(last_help_printed_len + cursor_position);
 }
 
 
@@ -983,27 +986,42 @@ void Terminal::set_command_response(std::string response){
 
 // funkce ovládající pohyb v historii příkazů
 void Terminal::command_controll(char key){
+    #ifdef LINUX
+        int ch = getchar();
+        if(ch == '['){ 
+            key = getchar();
+        }else{
+            ungetc(ch, stdin);
+        }
+    #endif
+
+    #ifdef WINDOWS
+        if(key == 27){ // pro windows 27 je modifikátor šipek
+            key = (char)console->get_character();
+        }
+    #endif
+
     switch (key){
-    case 77: // ARROW_RIGHT
+    case ARROW_RIGHT: // ARROW_RIGHT
         cursor_position--;
         if(cursor_position < 0){
             cursor_position = 0;
         }
         break;   
-    case 75: // ARROW_LEFT
+    case ARROW_LEFT: // ARROW_LEFT
         cursor_position++;
         if(cursor_position >= command.length()){
             cursor_position = command.length();
         }
         break;           
-    case 72: // ARROW_UP
+    case ARROW_UP: // ARROW_UP
         if(used_commands.size() > selected_command){
             selected_command++;
             command = used_commands.at(selected_command-1);
         }
         cursor_position = 0;
         break;
-    case 80: // ARROW_DOWN
+    case ARROW_DOWN: // ARROW_DOWN
         if(selected_command > 1 ){
             selected_command--;
             command = used_commands.at(selected_command-1);
@@ -1018,9 +1036,9 @@ void Terminal::command_controll(char key){
         selected_command = 0;
         cursor_position = 0;
         break;
-    default: break;
+    default: 
+        break;
     }
-
 }
 
 
@@ -1503,7 +1521,7 @@ void Terminal::tick(bool consume_input){
         print_lines(get_waiting_to_print());
     }
 
-    if(!consume_input){ return;  } // terminál je nastavený tak aby nekonzumoval žádné znaky
+    if(!consume_input){ return; } // terminál je nastavený tak aby nekonzumoval žádné znaky
 
     // braní příkazů z příkazové řádky
     if(console->has_any_char() || (continuing_with_cahracter != -1 && settings.use_confirm_character)){
@@ -1542,10 +1560,8 @@ void Terminal::tick(bool consume_input){
             command = guess_command(command).at(0);
         break;
         case -32:
-            //modifikátor šipek ignorujeme a bereme další znak
-            command_controll((char)console->get_character());
-            break; 
         case 27:
+            //šipky a escape sequence
             command_controll(input);
             break;
         default:
