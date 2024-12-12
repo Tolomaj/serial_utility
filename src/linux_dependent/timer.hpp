@@ -21,12 +21,16 @@ public:
 
     bool ticked(){
         clock_t now = clock() / (CLOCKS_PER_SEC/1000);
-        clock_t cmp = start;
-        if(now > cmp + delay){
+        if(now > start + delay){
             start = clock()/ (CLOCKS_PER_SEC/1000);
             return true;
         }
         return false;
+    }
+
+    //resetuje timer
+    void reset(){
+        start = clock() / (CLOCKS_PER_SEC/1000);
     }
 };
 

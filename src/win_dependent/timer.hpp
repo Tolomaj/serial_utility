@@ -20,15 +20,22 @@ void CALLBACK timer_interupt(HWND hwnd, UINT uMsg, UINT timerId, DWORD dwTime) {
 
 class Timer {
     int timer_id;
+    int timer_delay;
 public:
     Timer(int millis){
         timer_id = (uint64_t)SetTimer(NULL, 0, millis, &timer_interupt);
+        timer_delay = millis;
     }
 
     bool ticked(){
         bool ticked = timer_that_ticks == timer_id;
         timer_that_ticks = 0;
         return ticked;
+    }
+
+    void reset(){
+        KillTimer(NULL,timer_id);
+        timer_id = (uint64_t)SetTimer(NULL, 0, timer_delay, &timer_interupt);
     }
 };
 

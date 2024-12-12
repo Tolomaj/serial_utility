@@ -678,6 +678,7 @@ void Terminal::add_complete_line(std::string line){
         recived_line.message = line.substr(first_line_start, -1);
         stash.push_front(recived_line);
         lines_to_print++;
+        timer->reset(); // resetujeme timer kdyby náhodou přišel další folower. //! pokud folower nedojde dlouho i tak se tiká aby jsme viděli co došlo (považuju za lepší vědět co došlo něž to aby tam nebyla vizuální neperfekce)
         return;
     }
 
@@ -1517,6 +1518,7 @@ void Terminal::tick(bool consume_input){
 
     // každých 5000 ticků vypíse nastrádané linky. to je to aby se dalo číst comand co člověk píše
     if(timer->ticked()){
+
         //todo (zamezit aby se vykreslovalo pořád i když není linka) (optimalizace??)
         print_lines(get_waiting_to_print());
     }
