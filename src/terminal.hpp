@@ -1518,7 +1518,6 @@ void Terminal::tick(bool consume_input){
 
     // každých 5000 ticků vypíse nastrádané linky. to je to aby se dalo číst comand co člověk píše
     if(timer->ticked()){
-
         //todo (zamezit aby se vykreslovalo pořád i když není linka) (optimalizace??)
         print_lines(get_waiting_to_print());
     }

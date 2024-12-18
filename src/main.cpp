@@ -1,7 +1,7 @@
 #undef WINDOWS
 #undef LINUX
 
-#define LINUX // WINDOWS | LINUX
+#define WINDOWS // WINDOWS | LINUX
 
 #include "stdint.h"
 
@@ -268,6 +268,7 @@ std::string on_command(std::string command){
     }
 
     std::string command_to_run = "";
+    bool exec_save = false;
 
     // příkaz MAKE
     if(lower_command == cmd::name(cmd::MAKE) || lower_command.length() >= cmd::name_len(cmd::MAKE1) && lower_command.substr(0,cmd::name_len(cmd::MAKE1)) == cmd::name(cmd::MAKE1)){
@@ -289,6 +290,25 @@ std::string on_command(std::string command){
         force_to_show_returncode = true;
     }
 
+
+
+    // příkaz SAFE_EXEC
+    if(lower_command.length() >= cmd::name_len(cmd::SAFE_EXEC) && lower_command.substr(0,cmd::name_len(cmd::SAFE_EXEC)) == cmd::name(cmd::SAFE_EXEC)){
+        command_to_run = command.substr(cmd::name_len(cmd::SAFE_EXEC),-1);
+        exec_save = true;
+    }
+    // příkaz SAFE_EXEC
+    if(lower_command.length() >= cmd::name_len(cmd::SAFE_EXEC1) && lower_command.substr(0,cmd::name_len(cmd::SAFE_EXEC1)) == cmd::name(cmd::SAFE_EXEC1)){
+        command_to_run = command.substr(cmd::name_len(cmd::SAFE_EXEC1),-1);
+        exec_save = true;
+    }
+    // příkaz SAFE_EXEC
+    if(lower_command.length() >= cmd::name_len(cmd::SAFE_EXEC2) && lower_command.substr(0,cmd::name_len(cmd::SAFE_EXEC2)) == cmd::name(cmd::SAFE_EXEC2)){
+        command_to_run = command.substr(cmd::name_len(cmd::SAFE_EXEC2),-1);
+        exec_save = true;
+    }
+
+
     // zpracování příkazu EXEC & MAKE
     if(command_to_run != ""){
 
@@ -297,7 +317,7 @@ std::string on_command(std::string command){
 
         std::string revive_port = "";
         // některé make příkazi chtějí vyplou seriovou linku.
-        if(is_serial_command(command_to_run)){
+        if(is_serial_command(command_to_run) || exec_save){
             revive_port = serial->get_port_name();
             serial->close_port();
         }
