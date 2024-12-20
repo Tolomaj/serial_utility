@@ -1037,7 +1037,14 @@ void Terminal::command_controll(char key){
         selected_command = 0;
         cursor_position = 0;
         break;
+    case PAGE_UP:
+        console->scroll_screen_up(); // připraveno ovšem ve windows [SHIFT] + [PGUP] už plní tento účel
+        break;
+    case PAGE_DOWN:
+        console->scroll_screen_down(); // připraveno ovšem ve windows [SHIFT] + [PGDOWN] už plní tento účel
+        break;
     default: 
+        std::cout << "unknown key pressed: " << key << std::endl << std::endl;
         break;
     }
 }
@@ -1144,7 +1151,7 @@ std::string Terminal::do_command(std::string command){
     }
 
     // příkaz RESET_FILTER pro oddělání všech filtrů  -----------------------------------------------------------------------------------------------------------------------------
-    if(lower_command == cmd::name(cmd::RESET_FILTERS) || lower_command == cmd::name(cmd::RESET_FILTERS1) || lower_command == cmd::name(cmd::RESET_FILTERS2)){
+    if(lower_command == cmd::name(cmd::RESET_FILTERS) || lower_command == cmd::name(cmd::RESET_FILTERS1) || lower_command == cmd::name(cmd::RESET_FILTERS2) || lower_command == cmd::name(cmd::RESET_FILTERS3) ){
         this->set_text_filter("");
         this->set_file_filter("");
         return "Filters reseted!";

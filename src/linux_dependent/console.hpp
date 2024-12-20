@@ -35,6 +35,16 @@ public:
         std::cout << text ; //todo pokud bude pomalé předělat
     };
 
+    // scrollne obrazovku o jednu nahoru
+    void scroll_screen_up(){
+
+    }
+    // scrollne obrazovku o jednu dolů
+    void scroll_screen_down(){
+        
+    }
+
+
     // nastaví kurzor n znaků dozadu
     void set_cursor_back(int n){
         if(n > 0){

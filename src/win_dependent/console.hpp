@@ -5,6 +5,9 @@ class Console {
 private:
     // handler console
     HANDLE WINAPI con ,conIN;
+
+
+
 public:
     Console(){
         con = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -18,6 +21,16 @@ public:
         DWORD lr;
         WriteConsoleA(con, text.c_str(), text.length(), &lr, NULL);
     };
+
+    // scrollne obrazovku o jednu nahoru
+    void scroll_screen_up(){
+
+    }
+    // scrollne obrazovku o jednu dolů
+    void scroll_screen_down(){
+        
+    }
+
 
     // nastaví pozici kurzoru na poslední lince
     void set_cursor_back(int positionX){

@@ -20,6 +20,8 @@
 #define ARROW_LEFT  'D'
 #define ARROW_RIGHT 'C'
 
+#define PAGE_UP  'I'  //todo//?  for linux
+#define PAGE_DOWN 'Q' //todo//?  for linux
 
 class Serial {
 private:

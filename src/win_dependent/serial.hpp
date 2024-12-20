@@ -14,6 +14,9 @@
 #define ARROW_LEFT  'K'
 #define ARROW_RIGHT 'M'
 
+#define PAGE_UP  'I'
+#define PAGE_DOWN 'Q'
+
 
 class Serial {
 private:
