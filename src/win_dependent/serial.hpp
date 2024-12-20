@@ -9,10 +9,10 @@
 #define NOTHING_TO_READ INT_MAX
 
 //keydefs pro windows
-#define ARROW_UP    72
-#define ARROW_DOWN  80
-#define ARROW_LEFT  75
-#define ARROW_RIGHT 77
+#define ARROW_UP    'H'
+#define ARROW_DOWN  'P'
+#define ARROW_LEFT  'K'
+#define ARROW_RIGHT 'M'
 
 
 class Serial {

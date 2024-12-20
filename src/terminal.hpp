@@ -997,7 +997,7 @@ void Terminal::command_controll(char key){
     #endif
 
     #ifdef WINDOWS
-        if(key == 27){ // pro windows 27 je modifikátor šipek
+        if(key == -32){ // pro windows 27 je modifikátor šipek
             key = (char)console->get_character();
         }
     #endif
