@@ -1,5 +1,5 @@
 make:
-	g++ ./src/main.cpp -o sut -std=c++11
+	g++ ./src/main.cpp -o sut -std=c++17
 
 run:
 	./main.exe
